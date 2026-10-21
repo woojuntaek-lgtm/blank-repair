@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17181f">
+<title>빈칸 수선소</title>
+<meta name="description" content="1%씩 빈 열 100개, 빈 행을 지우면 37%만 남는다 — 데이터 무결성, 결측의 세 유형, 지우기와 채우기의 함정, 인코딩과 메모리 다이어트를 체험하는 전처리 앱">
+<style>
+:root{--bg:#17181f;--card:#1f212c;--card2:#282b39;--fg:#f1f2f7;--mut:#a8abbe;--line:#373a4d;
+--a:#6fdc9a;--b:#ff9b5c;--c:#7cc4ff;--ok:#6fdc9a;--bad:#ff7d7d;--gold:#ffd166;--pur:#b79cff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;line-height:1.55}
+[hidden]{display:none!important}
+.wrap{max-width:560px;margin:0 auto;padding:12px 14px 40px}
+h1{font-size:1.2rem;margin:6px 0}
+h1 small{display:block;font-size:.76rem;color:var(--mut);font-weight:400}
+.tabs{display:flex;gap:5px;margin:10px 0}
+.tabs button{flex:1;padding:9px 2px;border:1px solid var(--line);background:var(--card);color:var(--mut);border-radius:10px;font-size:.84rem;font-weight:600}
+.tabs button.on{background:#1f4a3a;color:#fff;border-color:var(--a)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+h2{font-size:1rem;margin:2px 0 8px}
+.note{font-size:.86rem;color:var(--mut);margin:8px 0 0}
+.note b{color:var(--fg)}
+.btn{padding:11px 14px;border-radius:12px;border:0;background:linear-gradient(135deg,#239079,#6fdc9a);color:#0e1a14;font-weight:800;font-size:.95rem;flex:1}
+.btn.sec{background:var(--card2);border:1px solid var(--line);color:var(--fg);font-weight:700}
+.btn.sm{flex:none;padding:7px 11px;font-size:.82rem}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row+.row{margin-top:8px}
+.pill{padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:var(--card2);color:var(--fg);font-size:.84rem}
+.pill.on{border-color:var(--gold);background:#4a3e1a;color:#fff}
+canvas{display:block;width:100%;border-radius:12px;background:#111219}
+.say{background:#173a33;border-left:3px solid var(--a);border-radius:8px;padding:9px 11px;font-size:.92rem;margin-top:10px}
+.say b{color:#fff}
+.say.q{border-left-color:var(--b);background:#2e2118}
+.res{margin-top:10px;font-size:.92rem;border-radius:10px;padding:10px 12px}
+.res.g{background:#16352a;border:1px solid #2f7a52}
+.res.r{background:#3a1d1d;border:1px solid #8a3a3a}
+.res.y{background:#3a3218;border:1px solid #8a7a3a}
+.mono,code{font-family:ui-monospace,Menlo,Consolas,monospace}
+.sl{display:grid;grid-template-columns:100px 1fr 58px;gap:8px;align-items:center;font-size:.86rem;margin-top:8px}
+.sl input{width:100%}
+.sl b{text-align:right;font-variant-numeric:tabular-nums}
+.big{font-size:2.2rem;font-weight:900;text-align:center;margin-top:6px;font-variant-numeric:tabular-nums}
+.big small{display:block;font-size:.8rem;font-weight:400;color:var(--mut)}
+.opts{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.opts button{text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--fg);font-size:.9rem}
+.opts button.right{border-color:#6fdc9a;background:#16352a}
+.opts button.wrong{border-color:#ff7d7d;background:#3a1d1d}
+.types{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.types div{background:var(--card2);border-radius:10px;padding:9px 10px;font-size:.86rem}
+.types div>b:first-child{display:block;font-size:.95rem}
+.types div .k{font-size:.74rem;color:var(--mut)}
+table.tb{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:6px;font-family:ui-monospace,Menlo,Consolas,monospace}
+table.tb th,table.tb td{padding:6px 5px;border-bottom:1px solid var(--line);text-align:left}
+table.tb th{color:var(--mut);font-weight:600;font-family:-apple-system,"Malgun Gothic",sans-serif}
+table.tb td.err{background:#5a2626;color:#fff;border-radius:4px}
+table.tb td.tap{cursor:pointer}
+table.tb td.miss{background:#3a3218;color:var(--gold)}
+.ts{display:flex;gap:4px;margin-top:8px}
+.ts div{flex:1;text-align:center;background:var(--card2);border-radius:9px;padding:7px 2px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem}
+.ts div small{display:block;font-size:.64rem;color:var(--mut);font-family:-apple-system,sans-serif}
+.ts div.fill{background:#3a3218;color:var(--gold);font-weight:800}
+.ts div.nan{border:1px dashed var(--gold);color:var(--gold)}
+.stat{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;text-align:center}
+.stat div{background:var(--card2);border-radius:10px;padding:7px 4px;font-size:.74rem;color:var(--mut)}
+.stat b{display:block;font-size:1.1rem;color:var(--fg);font-variant-numeric:tabular-nums}
+.guide{display:flex;gap:4px;margin-top:8px}
+.guide div{flex:1;text-align:center;border-radius:9px;padding:8px 3px;background:var(--card2);font-size:.76rem;opacity:.45}
+.guide div.on{opacity:1;border:1px solid var(--gold);background:#3a3218}
+.guide div b{display:block;font-size:.86rem}
+.mem{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.mem .m{display:grid;grid-template-columns:88px 1fr 66px;gap:8px;align-items:center;font-size:.84rem}
+.mem .bar{height:16px;background:#111219;border-radius:8px;overflow:hidden}
+.mem .bar i{display:block;height:100%;border-radius:8px;transition:width .3s}
+.mem b{text-align:right;font-variant-numeric:tabular-nums}
+.mem select{padding:4px 6px;border-radius:7px;border:1px solid var(--line);background:#111219;color:var(--fg);font-size:.78rem;font-family:ui-monospace,Menlo,Consolas,monospace}
+.code{background:#07080d;border-radius:10px;padding:9px 12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.78rem;white-space:pre;overflow-x:auto;color:#d8dcea;margin-top:8px}
+.code .c{color:#6a9955}.code .s{color:#9fe49b}
+.sum3{margin-top:12px;background:linear-gradient(135deg,#1d4840,#3a3218);border-radius:14px;padding:12px 14px}
+.sum3 ol{margin:4px 0;padding-left:20px;font-size:.92rem}
+.mine{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.mine div{display:flex;justify-content:space-between;gap:8px;background:var(--card2);border-radius:10px;padding:8px 10px;font-size:.88rem}
+.mine button{border:0;background:none;color:var(--mut);font-size:.9rem}
+input[type=text]{flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#111219;color:var(--fg);font-size:.92rem}
+select.ty{padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:#111219;color:var(--fg);font-size:.86rem}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#000c;color:#fff;padding:10px 16px;border-radius:999px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
+.toast.on{opacity:1}
+footer{text-align:center;color:var(--mut);font-size:.78rem;margin-top:18px}
+footer a{color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🧵 빈칸 수선소<small>쓰레기를 넣으면 쓰레기가 나온다 — 빈칸과 오류를 다루는 데이터 전처리</small></h1>
+<div class="tabs">
+  <button class="on" data-tab="t1">① 지우기</button>
+  <button data-tab="t2">② 왜 비었나</button>
+  <button data-tab="t3">③ 채우기</button>
+  <button data-tab="t4">④ 정리</button>
+</div>
+
+<!-- ① 사라지는 행 -->
+<section id="tab-t1">
+  <div class="card">
+    <h2>🗑️ 빈칸 있는 행을 지우면 얼마나 남을까</h2>
+    <p class="note" style="margin-top:0">열마다 독립적으로 조금씩 비어 있습니다. 빈칸이 <b>하나라도</b> 있는 행을 지우면(<code>df.dropna()</code>)?</p>
+    <div class="sl"><span>열 개수</span><input type="range" id="nc" min="1" max="200" value="100"><b id="ncV"></b></div>
+    <div class="sl"><span>열마다 빈칸</span><input type="range" id="pc" min="1" max="100" value="10"><b id="pcV"></b></div>
+    <div class="big" id="surv"></div>
+    <canvas id="gridCv" style="margin-top:8px"></canvas>
+    <p class="note" style="font-size:.76rem">그림: 40행 표본(열은 최대 40개까지 그림). <span style="color:#ffd166">■</span> 빈칸, 회색 줄 = 지워지는 행</p>
+    <div id="survMsg"></div>
+  </div>
+  <div class="card">
+    <h2>❓ 퀴즈 ① 사라지는 행</h2>
+    <div class="say q">열이 <b>10개</b>, 각 열마다 독립적으로 <b>1%</b>씩 비어 있습니다. 빈칸이 하나라도 있는 행을 모두 지우면 몇 %가 남을까요?</div>
+    <div class="opts" id="q1"><button data-a="99">약 99%</button><button data-a="90">약 90%</button><button data-a="37">약 37%</button></div>
+    <div id="q1Msg"></div>
+  </div>
+</section>
+
+<!-- ② 왜 비었나 -->
+<section id="tab-t2" hidden>
+  <div class="card">
+    <h2>🔍 데이터 무결성 — 틀린 칸을 찾아 누르세요 (<span id="foundN">0</span>/5)</h2>
+    <div class="note" style="margin-top:0">👥 회원 목록</div>
+    <table class="tb" id="tMem"></table>
+    <div class="note">🛒 주문 기록</div>
+    <table class="tb" id="tOrd"></table>
+    <div id="intMsg"></div>
+  </div>
+  <div class="card">
+    <h2>❓ 빈칸은 왜 생길까 — 결측의 세 유형</h2>
+    <div class="types">
+      <div><b>🎲 완전 무작위 결측 (MCAR)</b>돌풍에 안테나가 잠시 흔들려 값이 빠진 것처럼 완전히 <b>우연</b>. 지워도 결과가 크게 치우치지 않음.</div>
+      <div><b>🔗 무작위 결측 (MAR)</b>빈칸 확률이 <b>다른 열로 설명</b>됨. 예: 어떤 성별에서 체중 입력을 더 자주 건너뜀 → 성별 정보로 빈칸 추정 가능.</div>
+      <div><b>🙈 비무작위 결측 (MNAR)</b><b>값 자체 때문에</b> 빈칸이 생김. 원인이 데이터 바깥에 있어, 지우거나 평균으로 채우면 크게 치우침.</div>
+    </div>
+    <p class="note">해당 사항이 없어서 비는 경우(미혼인 사람의 배우자 직업)도 있습니다. 채우기 전에 먼저 <b>"왜 비었는가"</b>!</p>
+  </div>
+  <div class="card">
+    <h2>❓ 퀴즈 ② 어떤 결측일까</h2>
+    <div class="say q">가구 소득 조사에서 <b>소득이 아주 높은 가구들</b>이 응답을 많이 거부했습니다.</div>
+    <div class="opts" id="q2"><button data-a="mcar">🎲 완전 무작위 결측</button><button data-a="mar">🔗 무작위 결측</button><button data-a="mnar">🙈 비무작위 결측</button></div>
+    <div id="q2Msg"></div>
+  </div>
+  <div class="card">
+    <h2>💰 소득 조사 실험</h2>
+    <p class="note" style="margin-top:0">가상의 1만 가구. 상위 10% 가구 중 응답을 거부하는 비율을 바꿔 보세요.</p>
+    <div class="sl"><span>상위 10% 거부율</span><input type="range" id="ref" min="0" max="100" step="10" value="80"><b id="refV"></b></div>
+    <canvas id="incCv" style="margin-top:8px"></canvas>
+    <div class="stat"><div>실제 평균(원)<b id="iT"></b></div><div>응답자 평균(원)<b id="iR"></b></div><div>차이<b id="iD"></b></div></div>
+    <div id="incMsg"></div>
+  </div>
+</section>
+
+<!-- ③ 채우기 -->
+<section id="tab-t3" hidden>
+  <div class="card">
+    <h2>📈 시간 순서가 있는 센서 — 빈칸 채우기</h2>
+    <div class="row"><button class="pill on" data-f="ffill">⬅️ 직전 값</button><button class="pill" data-f="bfill">➡️ 직후 값</button><button class="pill" data-f="interp">📏 선형 보간</button><button class="pill" data-f="mean">➗ 평균</button></div>
+    <div class="ts" id="ts"></div>
+    <div class="code" id="fCode"></div>
+    <div id="fMsg"></div>
+    <p class="note">대표값: 좌우 대칭이면 <b>평균</b>, 극단값이 있으면 <b>중앙값</b>, 성별·지역 같은 글자 열이면 <b>최빈값</b>.</p>
+  </div>
+  <div class="card">
+    <h2>⛰️ 평균으로 채우면 생기는 일</h2>
+    <p class="note" style="margin-top:0">평균 50, 표준편차 10인 데이터 1,000개(예시)에서 일부를 지우고 평균으로 채웁니다.</p>
+    <div class="sl"><span>지운 비율</span><input type="range" id="mr" min="0" max="60" step="10" value="30"><b id="mrV"></b></div>
+    <canvas id="histCv" style="margin-top:8px"></canvas>
+    <div class="stat"><div>평균 (원래→채움)<b id="hM"></b></div><div>표준편차 (원래→채움)<b id="hS"></b></div><div>가운데 봉우리<b id="hP"></b></div></div>
+    <div id="hMsg"></div>
+  </div>
+  <div class="card">
+    <h2>🧭 결측률에 따라 고르기 (출발점)</h2>
+    <div class="sl"><span>결측률</span><input type="range" id="rate" min="0" max="50" value="12"><b id="rateV"></b></div>
+    <div class="guide" id="guide"><div><b>🗑️ 삭제</b>5% 미만</div><div><b>➗ 단순 대치</b>20%까지</div><div><b>🤝 이웃·다중 대치</b>그 이상</div></div>
+    <div class="say" id="gMsg"></div>
+    <div class="say q">🏭 <b>분야의 맥락이 먼저!</b> 설비가 비정상적으로 멈춰 센서 값이 비었다면 그 빈칸 자체가 <b>고장의 신호</b>입니다. 평균으로 매끄럽게 채우면 조기 경보의 기회를 지워 버립니다. 숫자만 보고 정하지 말고, 데이터가 <b>어떻게 만들어졌는지</b>부터 물으세요.</div>
+  </div>
+</section>
+
+<!-- ④ 정리 -->
+<section id="tab-t4" hidden>
+  <div class="card">
+    <h2>🔤 글자를 숫자로 — 인코딩</h2>
+    <div class="row"><button class="pill on" data-e="label">🏷️ 레이블 인코딩</button><button class="pill" data-e="onehot">🔥 원 핫 인코딩</button></div>
+    <table class="tb" id="encT"></table>
+    <div id="encMsg"></div>
+  </div>
+  <div class="card">
+    <h2>🥗 메모리 다이어트 — 100만 행</h2>
+    <p class="note" style="margin-top:0">온도(0~100 정수), 측정값(실수), 라인 이름(3종류) 세 열. 자료형을 바꿔 보세요. (대본의 예시 수치 기반, <b>pandas 버전·환경마다 다름</b>)</p>
+    <div class="mem" id="mem"></div>
+    <div class="big" id="memTot"></div>
+    <div class="code"><span class="c"># 자료형 줄이기</span>
+df[<span class="s">"온도"</span>]   = df[<span class="s">"온도"</span>].astype(<span class="s">"int8"</span>)
+df[<span class="s">"측정값"</span>] = df[<span class="s">"측정값"</span>].astype(<span class="s">"float32"</span>)
+df[<span class="s">"라인"</span>]   = df[<span class="s">"라인"</span>].astype(<span class="s">"category"</span>)</div>
+  </div>
+  <div class="card">
+    <h2>🧹 숫자 열에 글자가 섞였다면</h2>
+    <div class="code" id="coerce"></div>
+    <p class="note">오류로 멈추지 말고 일단 <b>빈칸(NaN)</b>으로 바꿔 두고, 정제 단계에서 처리하는 방법도 씁니다.</p>
+  </div>
+  <div class="card">
+    <h2>📌 세 줄 정리</h2>
+    <div class="sum3"><ol>
+      <li>쓰레기를 넣으면 쓰레기가 나온다 — <b>무결성 규칙</b>부터 점검한다.</li>
+      <li>빈칸은 채우기 전에 <b>왜 비었는지</b> 묻고, <b>행 전체 삭제</b>와 <b>평균 채우기</b>의 함정을 기억한다.</li>
+      <li>글자는 알맞은 방식으로 <b>숫자로 바꾸고</b>, <b>자료형을 줄여</b> 메모리를 아낀다.</li>
+    </ol></div>
+  </div>
+  <div class="card">
+    <h2>🤔 생각해 볼 질문</h2>
+    <p class="note" style="margin-top:0">자주 보는 설문이나 기록에서 빈칸이 가장 많이 생기는 항목은? 그 빈칸은 세 결측 중 어디에 해당할까요? (이 기기에만 저장)</p>
+    <div class="row" style="margin-top:8px"><input type="text" id="myIn" maxlength="50" placeholder="예: 설문의 소득 항목"><select class="ty" id="myTy"><option>🎲 완전 무작위</option><option>🔗 무작위</option><option selected>🙈 비무작위</option><option>❔ 모르겠음</option></select></div>
+    <div class="row" style="margin-top:6px"><button class="btn sm" id="myAdd">추가</button></div>
+    <div class="mine" id="mine"></div>
+  </div>
+</section>
+
+<footer>© 2026 정필 수심명 · <a href="https://blog.naver.com/omyman" target="_blank" rel="noopener">blog.naver.com/omyman</a><br>빅데이터 03 부록 · 인터넷 없이 동작 · 모든 데이터는 가상 예시</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('on'),1800);}
+const vib=n=>{try{navigator.vibrate&&navigator.vibrate(n);}catch(e){}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function prep(cv,ratio){const dpr=Math.min(2,window.devicePixelRatio||1),w=cv.clientWidth||320,h=Math.round(w*ratio);
+  cv.width=w*dpr;cv.height=h*dpr;cv.style.height=h+'px';const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);return{c,w,h};}
+function T(c,s,x,y,col,size,al,bl,wt){c.fillStyle=col;c.font=`${wt||''} ${size||12}px -apple-system,"Malgun Gothic",sans-serif`;c.textAlign=al||'center';c.textBaseline=bl||'middle';c.fillText(s,x,y);}
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const mean=a=>a.reduce((p,c)=>p+c,0)/a.length,sd=a=>{const m=mean(a);return Math.sqrt(a.reduce((p,c)=>p+(c-m)**2,0)/(a.length-1));};
+
+/* ===== ① 사라지는 행 ===== */
+let gridSeed=1;
+function surv(){const k=+$('#nc').value,p=+$('#pc').value/1000;$('#ncV').textContent=k+'개';$('#pcV').textContent=(p*100).toFixed(1)+'%';
+  const s=Math.pow(1-p,k);$('#surv').innerHTML=`${(s*100).toFixed(1)}%<small>남는 행 · (1 − ${(p*100).toFixed(1)}%)<sup>${k}</sup> — ${(100-s*100).toFixed(1)}%가 사라짐</small>`;
+  $('#surv').style.color=s>0.9?'#6fdc9a':s>0.6?'#ffd166':'#ff7d7d';
+  const R=rng(gridSeed),rows=40,cols=Math.min(k,40);const {c,w,h}=prep($('#gridCv'),0.55);c.clearRect(0,0,w,h);const cw=w/cols,ch=h/rows;let gone=0;
+  for(let r=0;r<rows;r++){const miss=[];let any=false;for(let j=0;j<k;j++){const m=R()<p;if(m)any=true;if(j<cols)miss.push(m);}if(any)gone++;
+    for(let j=0;j<cols;j++){c.fillStyle=miss[j]?'#ffd166':any?'#3a3d4a':'#2f6a4a';c.fillRect(j*cw+.5,r*ch+.5,cw-1,ch-1);}}
+  $('#survMsg').innerHTML=`<div class="say">표본 40행 중 <b>${gone}행</b>이 지워졌습니다(열 ${k}개 모두 그렸을 때 기준). 빈칸 하나 때문에 <b>멀쩡한 값까지 함께</b> 버려집니다. 행 전체 삭제는 빈칸이 아주 적을 때만 — 보통 결측률 <b>5% 미만</b>을 기준으로 삼습니다.</div>`;}
+['nc','pc'].forEach(id=>$('#'+id).addEventListener('input',()=>{gridSeed++;surv();}));
+$$('#q1 button').forEach(b=>b.onclick=()=>{const ok=b.dataset.a==='90';$$('#q1 button').forEach(x=>x.className=x.dataset.a==='90'?'right':x===b?'wrong':'');vib(ok?[30,40,60]:80);
+  $('#q1Msg').innerHTML=`<div class="res ${ok?'g':'r'}">${ok?'🎉 정답!':'아쉽네요.'} 정답은 <b>약 90%</b>. 한 열이 차 있을 확률 0.99를 <b>10번</b> 곱하면 0.99¹⁰ ≈ <b>0.904</b>. 열이 100개면 100번 곱해 0.99¹⁰⁰ ≈ <b>0.366</b> — 열이 많아질수록 살아남는 행이 빠르게 줄어듭니다.</div>`;
+  $('#nc').value=10;$('#pc').value=10;gridSeed++;surv();});
+
+/* ===== ② 무결성 ===== */
+const MEM=[['M01','김하나','34','hana@mail.kr'],['M02','이두리','-15','duri@mail.kr'],['M02','박세찬','41','sechan@mail.kr'],['','최네오','28','neo@mail.kr'],['M05','정다섯','52','dasut.mail.kr']];
+const ORD=[['O1','M01','빵 3개'],['O2','M05','케이크'],['O3','M09','쿠키']];
+const ERR={'m-1-2':'도메인 무결성: 나이에 −15세? 정해진 범위를 벗어남','m-2-0':'개체 무결성: 회원 번호 M02가 겹침(고유 번호는 겹치면 안 됨)','m-3-0':'개체 무결성: 회원 번호가 비어 있음','m-4-3':'도메인 무결성: 이메일에 @가 없음','o-2-1':'참조 무결성: 회원 목록에 없는 M09의 주문 — 유령 주문!'};
+const found=new Set();
+function drawInt(){const cell=(k,v)=>`<td class="tap${found.has(k)?' err':''}" data-k="${k}">${v===''?'<i style="color:#777">(빈칸)</i>':esc(v)}</td>`;
+  $('#tMem').innerHTML='<tr><th>회원 번호</th><th>이름</th><th>나이</th><th>이메일</th></tr>'+MEM.map((r,i)=>'<tr>'+r.map((v,j)=>cell(`m-${i}-${j}`,v)).join('')+'</tr>').join('');
+  $('#tOrd').innerHTML='<tr><th>주문 번호</th><th>회원 번호</th><th>상품</th></tr>'+ORD.map((r,i)=>'<tr>'+r.map((v,j)=>cell(`o-${i}-${j}`,v)).join('')+'</tr>').join('');
+  $('#foundN').textContent=found.size;
+  $$('#tMem td.tap,#tOrd td.tap').forEach(td=>td.onclick=()=>{const k=td.dataset.k;if(ERR[k]){if(!found.has(k)){found.add(k);vib(30);drawInt();$('#intMsg').innerHTML=`<div class="res ${found.size===5?'g':'y'}">✅ ${ERR[k]}${found.size===5?'<br>🎉 5개를 모두 찾았습니다! 개체·참조·도메인 — 세 무결성 규칙을 점검하는 것이 전처리의 첫걸음.':''}</div>`;}}else{vib(10);toast('이 칸은 괜찮아요');}});}
+/* ===== ② 퀴즈 ===== */
+$$('#q2 button').forEach(b=>b.onclick=()=>{const ok=b.dataset.a==='mnar';$$('#q2 button').forEach(x=>x.className=x.dataset.a==='mnar'?'right':x===b?'wrong':'');vib(ok?[30,40,60]:80);
+  $('#q2Msg').innerHTML=`<div class="res ${ok?'g':'r'}">${ok?'🎉 정답!':'아쉽네요.'} 정답은 <b>비무작위 결측</b>. 소득이 높아서(<b>값 자체 때문에</b>) 답을 안 했습니다. 아래 실험에서 응답자만의 평균이 얼마나 낮게 나오는지 확인해 보세요. 평균으로 채워도 해결되지 않습니다 — 조사 설계를 바꾸거나 해당 분야 전문가와 함께 원인을 따져야 합니다.</div>`;});
+/* ===== ② 소득 실험 ===== */
+const INC=(()=>{const R=rng(3),o=[];for(let i=0;i<10000;i++){const u=Math.max(1e-12,R()),v=R();o.push(Math.exp(8.3+0.55*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v))/10);}return o;})(); // 가상 월 소득(만 원)
+const TH=[...INC].sort((a,b)=>a-b)[9000];
+function income(){const r=+$('#ref').value/100;$('#refV').textContent=Math.round(r*100)+'%';const R=rng(9),resp=INC.filter(v=>!(v>=TH&&R()<r));
+  const mt=mean(INC),mr=mean(resp),d=(1-mr/mt)*100;$('#iT').textContent=Math.round(mt)+'만';$('#iR').textContent=Math.round(mr)+'만';$('#iD').textContent='−'+d.toFixed(1)+'%';$('#iD').style.color=d>5?'#ff7d7d':'#fff';
+  const {c,w,h}=prep($('#incCv'),0.45);c.clearRect(0,0,w,h);const NB=30,mx=[...INC].sort((a,b)=>a-b)[9900],bw=mx/NB,L=10,Rr=w-10,B=h-22,Tp=10;
+  const hist=arr=>{const o=Array(NB).fill(0);arr.forEach(v=>{if(v<mx)o[Math.floor(v/bw)]++;});return o;};const ha=hist(INC),hr=hist(resp),top=Math.max(...ha);const bx=(Rr-L)/NB;
+  ha.forEach((n,i)=>{const hh=n/top*(B-Tp);c.fillStyle='#3a3d4a';c.fillRect(L+i*bx+1,B-hh,bx-2,hh);});
+  hr.forEach((n,i)=>{const hh=n/top*(B-Tp);c.fillStyle=i*bw>=TH?'#ff9b5c':'#6fdc9a';c.fillRect(L+i*bx+1,B-hh,bx-2,hh);});
+  const xp=v=>L+v/mx*(Rr-L);[[mt,'#fff'],[mr,'#ffd166']].forEach(([v,col],k)=>{c.strokeStyle=col;c.lineWidth=2;c.setLineDash(k?[5,4]:[]);c.beginPath();c.moveTo(xp(v),Tp);c.lineTo(xp(v),B);c.stroke();c.setLineDash([]);});T(c,'─ 실제 평균',Rr,Tp+4,'#fff',10,'right');T(c,'┄ 응답자 평균',Rr,Tp+18,'#ffd166',10,'right');
+  T(c,'월 소득(가상) →',Rr,h-6,'#a8abbe',10,'right');T(c,'회색 = 전체 가구 · 색 = 응답한 가구',L,h-6,'#a8abbe',10,'left');
+  $('#incMsg').innerHTML=r>0?`<div class="say">상위 10% 가구의 ${Math.round(r*100)}%가 응답을 거부하니, 응답한 사람들만의 평균이 실제보다 <b>약 ${d.toFixed(0)}% 낮게</b> 나옵니다. 남은 데이터만 보면 사회가 실제보다 <b>덜 부유해 보입니다</b>. (가상 분포라 대본의 수치와 조금 다를 수 있음)</div>`:'<div class="say">거부가 없으면 응답자 평균 = 실제 평균. 슬라이더를 올려 보세요.</div>';}
+$('#ref').addEventListener('input',income);
+
+/* ===== ③ 시계열 채우기 ===== */
+const TS=[20.8,21.3,null,null,22.1,22.4,null,22.0];let fm='ffill';
+function fill(){const v=TS.slice(),known=TS.filter(x=>x!==null),avg=mean(known);let out=v.slice();
+  if(fm==='ffill'){let last=null;out=v.map(x=>x===null?last:(last=x));}
+  else if(fm==='bfill'){let nx=null;out=v.slice().reverse().map(x=>x===null?nx:(nx=x)).reverse();}
+  else if(fm==='mean')out=v.map(x=>x===null?avg:x);
+  else{out=v.slice();for(let i=0;i<v.length;i++)if(v[i]===null){let a=i-1;while(a>=0&&v[a]===null)a--;let b=i+1;while(b<v.length&&v[b]===null)b++;out[i]=v[a]+(v[b]-v[a])*(i-a)/(b-a);}}
+  $('#ts').innerHTML=TS.map((x,i)=>`<div class="${x===null?'fill':''}"><small>${i}시</small>${x===null?out[i].toFixed(2):x.toFixed(1)}</div>`).join('');
+  $('#fCode').innerHTML={ffill:'df["온도"].ffill()      <span class="c"># 직전 값 끌어오기</span>',bfill:'df["온도"].bfill()      <span class="c"># 직후 값 당겨 오기</span>',interp:'df["온도"].interpolate() <span class="c"># 두 값 사이를 고르게</span>',mean:'df["온도"].fillna(df["온도"].mean())  <span class="c"># 평균</span>'}[fm];
+  $('#fMsg').innerHTML=`<div class="say">${{ffill:'21.3 다음 빈칸 두 개가 직전 값 <b>21.3, 21.3</b>으로. 계단처럼 평평해집니다.',bfill:'빈칸이 직후 값 <b>22.1, 22.1</b>로.',interp:'21.3과 22.1 사이를 고르게 이어 <b>21.57, 21.83</b>. 시간 흐름이 자연스럽습니다.',mean:`모든 빈칸이 전체 평균 <b>${avg.toFixed(2)}</b> 한 값으로. 시간 흐름이 무시됩니다 — 아래의 함정도 보세요.`}[fm]}</div>`;}
+$$('[data-f]').forEach(b=>b.onclick=()=>{$$('[data-f]').forEach(x=>x.classList.toggle('on',x===b));fm=b.dataset.f;fill();});
+/* ===== ③ 평균 채우기의 함정 ===== */
+const RAW=(()=>{const R=rng(5),o=[];for(let i=0;i<1000;i++){const u=Math.max(1e-12,R()),v=R();o.push(50+10*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v));}return o;})();
+const ORDER=(()=>{const R=rng(25),idx=[...RAW.keys()];for(let i=idx.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}return idx;})();
+function hist(){const r=+$('#mr').value/100;$('#mrV').textContent=Math.round(r*100)+'%';const miss=new Set(ORDER.slice(0,Math.round(1000*r)));const obs=RAW.filter((_,i)=>!miss.has(i)),mo=mean(obs);
+  const filled=RAW.map((v,i)=>miss.has(i)?mo:v);const s0=sd(RAW),s1=sd(filled);
+  $('#hM').textContent=`${mean(RAW).toFixed(1)} → ${mean(filled).toFixed(1)}`;$('#hS').textContent=`${s0.toFixed(1)} → ${s1.toFixed(1)}`;$('#hS').style.color=s1<s0*0.95?'#ff7d7d':'#fff';$('#hP').textContent=miss.size+'개';
+  const {c,w,h}=prep($('#histCv'),0.5);c.clearRect(0,0,w,h);const lo=15,hi=85,NB=35,bw=(hi-lo)/NB,L=10,Rr=w-10,B=h-20,Tp=10,bx=(Rr-L)/NB;
+  const H=a=>{const o=Array(NB).fill(0);a.forEach(v=>{const k=Math.floor((v-lo)/bw);if(k>=0&&k<NB)o[k]++;});return o;};const ho=H(RAW),hf=H(filled),top=Math.max(...hf,...ho);
+  hf.forEach((n,i)=>{const hh=n/top*(B-Tp);c.fillStyle=Math.abs(lo+(i+.5)*bw-mo)<bw/2+1e-9&&miss.size?'#ff9b5c':'#6fdc9a';c.fillRect(L+i*bx+1,B-hh,bx-2,hh);});
+  c.strokeStyle='#fff';c.lineWidth=1.5;c.beginPath();ho.forEach((n,i)=>{const x=L+(i+.5)*bx,y=B-n/top*(B-Tp);i?c.lineTo(x,y):c.moveTo(x,y);});c.stroke();
+  [20,35,50,65,80].forEach(v=>T(c,String(v),L+(v-lo)/(hi-lo)*(Rr-L),h-8,'#a8abbe',10));T(c,'흰 선 = 원래 분포',Rr,Tp+4,'#fff',10,'right');
+  $('#hMsg').innerHTML=miss.size?`<div class="res r">⛰️ 빈칸 <b>${miss.size}개</b>가 모두 한 점(${mo.toFixed(1)})에 쌓여 가운데에 <b>인공 봉우리</b>(주황)가 솟았습니다. 평균은 그대로지만 표준편차가 <b>${s0.toFixed(1)} → ${s1.toFixed(1)}</b>로 줄어, 데이터가 실제보다 훨씬 고르게 보입니다. 그러면 신뢰 구간이 지나치게 좁아지고 <b>없는 차이를 있다고</b> 판단하는 실수가 생길 수 있습니다.</div>`:'<div class="say">지운 값이 없으면 원래 분포 그대로. 슬라이더를 올려 보세요.</div>';}
+$('#mr').addEventListener('input',hist);
+function guide(){const r=+$('#rate').value;$('#rateV').textContent=r+'%';const k=r<5?0:r<=20?1:2;$$('#guide div').forEach((d,i)=>d.classList.toggle('on',i===k));
+  $('#gMsg').innerHTML=[`결측률 ${r}% → 빈칸 있는 행을 <b>삭제</b>해도 손실이 작습니다. <span class="mono">df.dropna()</span>`,`결측률 ${r}% → 평균·중앙값·최빈값 같은 <b>단순 대치</b>. <span class="mono">df.fillna(...)</span>`,`결측률 ${r}% → 다른 열 정보를 쓰는 <b>K 최근접 이웃 대치</b>(가장 비슷한 행 5개의 값으로 채움, 예: <span class="mono">KNNImputer(n_neighbors=5)</span>)나, 여러 번 채운 데이터셋을 각각 분석해 합치는 <b>다중 대치</b>로 불확실성까지 반영.`][k]+'<br><span style="color:#a8abbe;font-size:.84rem">이 숫자는 출발점일 뿐 — 데이터마다 판단이 필요합니다.</span>';}
+$('#rate').addEventListener('input',guide);
+
+/* ===== ④ 인코딩 ===== */
+const REG=['서울','부산','인천','서울','부산'];let em='label';
+function enc(){const cats=['서울','부산','인천'];
+  if(em==='label'){$('#encT').innerHTML='<tr><th>지역</th><th>→ 숫자</th></tr>'+REG.map(r=>`<tr><td>${r}</td><td>${cats.indexOf(r)}</td></tr>`).join('');
+    $('#encMsg').innerHTML='<div class="res y">🏷️ 서울=0, 부산=1, 인천=2. 그런데 모델이 <b>"인천은 부산보다 두 배 크다"</b>고 오해할 수 있습니다! 순서가 없는 범주에는 맞지 않습니다.</div>';}
+  else{$('#encT').innerHTML='<tr><th>지역</th>'+cats.map(c=>`<th>지역_${c}</th>`).join('')+'</tr>'+REG.map(r=>`<tr><td>${r}</td>${cats.map(c=>`<td style="color:${c===r?'#6fdc9a':'#55586a'}">${c===r?1:0}</td>`).join('')}</tr>`).join('');
+    $('#encMsg').innerHTML='<div class="res g">🔥 범주마다 열을 따로 만들고 해당하는 곳만 1, 나머지는 0 (<span class="mono">pd.get_dummies(df["지역"])</span>). 크기 순서 오해가 사라집니다. 대신 범주가 1,000개면 열도 1,000개 — 범주가 아주 많을 때는 다른 방법을 찾아야 합니다.</div>';}}
+$$('[data-e]').forEach(b=>b.onclick=()=>{$$('[data-e]').forEach(x=>x.classList.toggle('on',x===b));em=b.dataset.e;enc();});
+/* ===== ④ 메모리 ===== */
+const MCOL=[['온도',[['int64',8],['int16',2],['int8',1]],'int64'],['측정값',[['float64',8],['float32',4]],'float64'],['라인 이름',[['문자열(기본)',72],['category',1]],'문자열(기본)']];
+const msel=MCOL.map(c=>c[2]);
+function mem(){const sizes=MCOL.map((c,i)=>c[1].find(o=>o[0]===msel[i])[1]);const tot=sizes.reduce((a,b)=>a+b,0);
+  $('#mem').innerHTML=MCOL.map((c,i)=>`<div class="m"><span>${c[0]}<br><select data-i="${i}">${c[1].map(o=>`<option ${o[0]===msel[i]?'selected':''}>${o[0]}</option>`).join('')}</select></span><div class="bar"><i style="width:${sizes[i]/72*100}%;background:${sizes[i]>4?'#ff9b5c':'#6fdc9a'}"></i></div><b>약 ${sizes[i]} MB</b></div>`).join('');
+  $$('#mem select').forEach(s=>s.onchange=()=>{msel[+s.dataset.i]=s.value;mem();vib(15);});
+  $('#memTot').innerHTML=`약 ${tot} MB<small>${tot<=6?'🎉 기본 설정(약 88 MB)의 약 1/15! 온도는 0~100이라 int8로 충분, 측정값은 float32, 라인은 3종류뿐이라 category.':'기본 설정 그대로면 약 88 MB. 자료형을 줄여 보세요.'}</small>`;$('#memTot').style.color=tot<=6?'#6fdc9a':tot<30?'#ffd166':'#ff9b5c';}
+$('#coerce').innerHTML='s = pd.Series(["21", "22", "서른", "24"])\npd.to_numeric(s, errors=<span class="s">"coerce"</span>)\n<span class="c"># → [21.0, 22.0, NaN, 24.0]   "서른"은 빈칸으로</span>';
+
+/* ===== 나의 예 ===== */
+const MK='blank.mine';let mine=[];try{mine=JSON.parse(localStorage.getItem(MK)||'[]');if(!Array.isArray(mine))mine=[];}catch(e){mine=[];}
+const saveM=()=>{try{localStorage.setItem(MK,JSON.stringify(mine));}catch(e){}};
+function drawMine(){$('#mine').innerHTML=mine.length?mine.map((m,i)=>`<div><span>${esc(m)}</span><button data-d="${i}" aria-label="지우기">✕</button></div>`).join(''):'<p class="note">빈칸의 이유를 먼저 묻는 습관 — 데이터를 다루는 사람의 가장 중요한 기본기입니다.</p>';
+  $$('#mine button').forEach(b=>b.onclick=()=>{mine.splice(+b.dataset.d,1);saveM();drawMine();});}
+$('#myAdd').onclick=()=>{const v=$('#myIn').value.trim();if(!v)return;mine.unshift(`${$('#myTy').value} · ${v}`);mine=mine.slice(0,30);saveM();$('#myIn').value='';drawMine();toast('빈칸 관찰 기록!');};
+
+/* ===== 탭 ===== */
+function show(t){$$('.tabs button').forEach(x=>x.classList.toggle('on',x.dataset.tab===t));['t1','t2','t3','t4'].forEach(k=>$('#tab-'+k).hidden=k!==t);
+  if(t==='t1')surv();if(t==='t2')income();if(t==='t3')hist();window.scrollTo(0,0);}
+$$('.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.tab));
+window.addEventListener('resize',()=>{if(!$('#tab-t1').hidden)surv();if(!$('#tab-t2').hidden)income();if(!$('#tab-t3').hidden)hist();});
+surv();drawInt();income();fill();hist();guide();enc();mem();drawMine();
+})();
+</script>
+</body>
+</html>
